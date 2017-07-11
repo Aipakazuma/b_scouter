@@ -84,3 +84,38 @@ hdmi_mode=4
 ## miniconda install
 
 * [Anaconda on Raspberry PI 3](http://qiita.com/jpena930/items/eac02cb4e635bfba83d8)
+
+sudo使わずに試した
+
+## opencv 3.2 install
+
+* [Compile OpenCV 3.2 for Anaconda Python 3.6, 3.5, 3.4 and 2.7](https://www.scivision.co/anaconda-python-opencv3/)
+
+* このとき、電源不足で死にそうになって怖かった
+* メモリが足りなくてkillされることが多く、他のアプリケーションを閉じたりして何度もコンパイルを試した
+* 何度か再起動するようにもなった。。。やばい
+* これ無理っぽい
+* wheelで入れることにしました
+  * 入りませんでした...
+* どうすべ・・・？
+
+* []()
+
+```sh
+$ cmake -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=~/miniconda3/ -D INSTALL_PYTHON_EXAMPLES=ON -D BUILD_NEW_PYTHON_SUPPORT=ON -D OPENCV_EXTRA_MODULES_PATH=../../opencv_contrib/modules -D BUILD_EXAMPLES=ON -D PYTHON_EXECUTABLE=$(which python3) -D BUILD_opencv_python3=ON -D BUILD_opencv_python2=OFF -D BUILD_opencv_java=OFF -D BUILD_opencv_test_java=OFF ..
+```
+
+
+
+## ssh server install
+
+```sh
+$ sudo apt install openssh-server
+$ /etc/init.d/ssh start
+```
+
+これで同じネットワークならssh接続できるようになった
+
+
+
+
