@@ -3,9 +3,11 @@
 完璧ネタです。夢です。ロマンです（多分）。
 
 
+
 # Usage
 
 まだない
+
 
 
 # Todo
@@ -49,7 +51,53 @@
 勉強した内容は細かくでいいからブログに反映 => 会社のブログに書くことになった
 
 
+
 # If I have time
 
 * ラズパイとかでIoT化してみたい 
     * 2万あればいけそう
+
+
+# could do
+
+## ubuntuをラズパイにインストール
+
+```sh
+$ xzcat ~/Downloads/ubuntu-16.04-preinstalled-server-armhf+raspi3.img.xz | dd of=/dev/disk2s1
+dd: /dev/disk2s1: Permission denied
+$ xzcat ~/Downloads/ubuntu-16.04-preinstalled-server-armhf+raspi3.img.xz | sudo dd of=/dev/disk2s1
+Password:
+dd: /dev/disk2s1: Resource busy  # !??
+# 自動でマウントしていたのでアンマウント
+$ sudo diskutil umount "/Volumes/NO NAME"
+$ xzcat ~/Downloads/ubuntu-16.04-preinstalled-server-armhf+raspi3.img.xz | sudo dd of=/dev/disk2s1
+```
+
+* [第450回　Raspberry Pi 3にUbuntu 16.04 LTSをインストールする（Ubuntuカーネル編）](http://gihyo.jp/admin/serial/01/ubuntu-recipe/0450)
+
+
+結構長い・・・
+
+
+結局なんどか試したけど、bootできなかった。このOSは諦め、xubuntuを試したらbootできた。
+
+## 画面小さい問題
+
+
+目が痛い
+
+* [RaspberryPiのHDMIディスプレイ解像度を調整](http://kamuycikap.hatenablog.com/entry/2015/02/19/012349)
+
+
+ここを参考にしたらできた
+
+```text
+hdmi_group=2   # <--- HDMI
+hdmi_mode=4
+```
+
+これでみえるようになった
+
+## miniconda install
+
+* [Anaconda on Raspberry PI 3](http://qiita.com/jpena930/items/eac02cb4e635bfba83d8)
