@@ -1,7 +1,5 @@
-# -*- coding: utf8 -*-
-
-
 import tensorflow as tf
+import re
 
 
 def _variable_on_cpu(name, shape, initializer, use_fp16):
@@ -39,7 +37,7 @@ def _variable_with_weight_decay(name, shape, stddev, wd, use_fp16):
         tf.truncated_normal_initializer(stddev=stddev, dtype=dtype),
         use_fp16)
     if wd is not None:
-        weight_decay = tf.mul(tf.nn.l2_loss(var), wd, name='weight_loss')
+        weight_decay = tf.multiply(tf.nn.l2_loss(var), wd, name='weight_loss')
         tf.add_to_collection('losses', weight_decay)
     return var
 
@@ -55,9 +53,10 @@ def _activation_summary(x):
     """
     # Remove 'tower_[0-9]/' from the name in case this is a multi-GPU training
     # session. This helps the clarity of presentation on tensorboard.
+    TOWER_NAME='tower'
     tensor_name = re.sub('%s_[0-9]*/' % TOWER_NAME, '', x.op.name)
-    tf.histogram_summary(tensor_name + '/activations', x)
-    tf.scalar_summary(tensor_name + '/sparsity', tf.nn.zero_fraction(x))
+    tf.summary.histogram(tensor_name + '/activations', x)
+    tf.summary.scalar(tensor_name + '/sparsity', tf.nn.zero_fraction(x))
 
 
 def visualize_hidden_layer_output(summary_name, layer_output,
@@ -91,8 +90,8 @@ def _add_loss_summaries(total_loss, logger=True):
         for l in losses + [total_loss]:
           # Name each loss as '(raw)' and name the moving average version of the loss
           # as the original loss name.
-          tf.scalar_summary(l.op.name +' (raw)', l)
-          tf.scalar_summary(l.op.name, loss_averages.average(l))
+          tf.summary.scalar(l.op.name +' (raw)', l)
+          tf.summary.scalar(l.op.name, loss_averages.average(l))
   
     return loss_averages_op
 
@@ -103,7 +102,7 @@ def inference(x, batch_size, use_fp16, logger=True):
                                              shape=[5, 5, 3, 64],
                                              stddev=5e-2,
                                              wd=0.0,
-                                             use_fp16)
+                                             use_fp16=use_fp16)
         conv = tf.nn.conv2d(x, kernel, [1, 1, 1, 1], padding='SAME')
         biases = _variable_on_cpu('biases', [64], tf.constant_initializer(0.0), use_fp16)
         bias = tf.nn.bias_add(conv, biases)
@@ -122,7 +121,7 @@ def inference(x, batch_size, use_fp16, logger=True):
                                              shape=[5, 5, 64, 64],
                                              stddev=5e-2,
                                              wd=0.0,
-                                             use_fp16)
+                                             use_fp16=use_fp16)
         conv = tf.nn.conv2d(norm1, kernel, [1, 1, 1, 1], padding='SAME')
         biases = _variable_on_cpu('biases', [64], tf.constant_initializer(0.0), use_fp16)
         bias = tf.nn.bias_add(conv, biases)
@@ -136,10 +135,11 @@ def inference(x, batch_size, use_fp16, logger=True):
                            padding='SAME', name='pool2')
 
     with tf.variable_scope('fc3') as scope:
-        reshape = tf.reshape(pool2, [batch_size, -1])
+        pool2_shape = pool2.get_shape()
+        reshape = tf.reshape(pool2, [batch_size, (pool2_shape[1] * pool2_shape[2] * pool2_shape[3]).value])
         dim = reshape.get_shape()[1].value
         weights = _variable_with_weight_decay('weights', shape=[dim, 512],
-                                              stddev=0.04, wd=0.004, use_fp16)
+                                              stddev=0.04, wd=0.004, use_fp16=use_fp16)
         biases = _variable_on_cpu('biases', [512], tf.constant_initializer(0.1), use_fp16)
         fc3 = tf.nn.relu(tf.matmul(reshape, weights) + biases, name=scope.name)
         if logger:
@@ -147,7 +147,7 @@ def inference(x, batch_size, use_fp16, logger=True):
 
     with tf.variable_scope('fc4') as scope:
         weights = _variable_with_weight_decay('weights', shape=[512, 128],
-                                              stddev=0.04, wd=0.004, use_fp16)
+                                              stddev=0.04, wd=0.004, use_fp16=use_fp16)
         biases = _variable_on_cpu('biases', [128], tf.constant_initializer(0.1), use_fp16)
         fc4 = tf.nn.relu(tf.matmul(fc3, weights) + biases, name=scope.name)
         if logger:
@@ -155,7 +155,7 @@ def inference(x, batch_size, use_fp16, logger=True):
 
     with tf.variable_scope('softmax_linear') as scope:
         weights = _variable_with_weight_decay('weights', shape=[128, 2],
-                                              stddev=1/128.0, wd=0.0, use_fp16)
+                                              stddev=1/128.0, wd=0.0, use_fp16=use_fp16)
         biases = _variable_on_cpu('biases', [2], tf.constant_initializer(0.0), use_fp16)
         softmax_linear = tf.add(tf.matmul(fc4, weights), biases, name=scope.name)
         if logger:
@@ -167,7 +167,7 @@ def inference(x, batch_size, use_fp16, logger=True):
 def loss(logits, labels):
     labels = tf.cast(labels, tf.int64)
     cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(
-                    logits, labels, name='cross_entropy_per_example')
+                    logits=logits, labels=labels, name='cross_entropy_per_example')
     cross_entropy_mean = tf.reduce_mean(cross_entropy, name='cross_entropy')
     tf.add_to_collection('losses', cross_entropy_mean)
     return tf.add_n(tf.get_collection('losses'), name='total_loss')
@@ -175,17 +175,21 @@ def loss(logits, labels):
 
 def train(total_loss, global_step, batch_size, logger=True):
     # Variables that affect learning rate.
+    NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN = 1280
+    NUM_EPOCHS_PER_DECAY = 350.0
     num_batches_per_epoch = NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN / batch_size
     decay_steps = int(num_batches_per_epoch * NUM_EPOCHS_PER_DECAY)
   
     # Decay the learning rate exponentially based on the number of steps.
+    INITIAL_LEARNING_RATE = 0.1
+    LEARNING_RATE_DECAY_FACTOR = 0.1
     lr = tf.train.exponential_decay(INITIAL_LEARNING_RATE,
                                     global_step,
                                     decay_steps,
                                     LEARNING_RATE_DECAY_FACTOR,
                                     staircase=True)
     if logger:
-        tf.scalar_summary('learning_rate', lr)
+        tf.summary.scalar('learning_rate', lr)
   
     # Generate moving averages of all losses and associated summaries.
     loss_averages_op = _add_loss_summaries(total_loss, logger)
@@ -201,13 +205,13 @@ def train(total_loss, global_step, batch_size, logger=True):
     # Add histograms for trainable variables.
     if logger:
         for var in tf.trainable_variables():
-            tf.histogram_summary(var.op.name, var)
+            tf.summary.histogram(var.op.name, var)
   
     # Add histograms for gradients.
     if logger:
         for grad, var in grads:
             if grad is not None:
-                tf.histogram_summary(var.op.name + '/gradients', grad)
+                tf.summary.histogram(var.op.name + '/gradients', grad)
   
     # Track the moving averages of all trainable variables.
     variable_averages = tf.train.ExponentialMovingAverage(
