@@ -6,11 +6,13 @@ import numpy as np
 import os
 import sys
 from time import time
+from datetime import datetime
+import traceback
 
 
 def training(args):
     width = 120
-    height = 196
+    height = 169
     channel = 3
     data_obj = Data(data_dir_path=args.data_dir)
     data = data_obj.data_sets
@@ -18,21 +20,25 @@ def training(args):
     labels[:int(len(data)/2)] = 1
 
     with tf.Graph().as_default():
-        images = tf.decode_raw(data, tf.uint8)
-        images = tf.reshape(images, (height, width, channel))
-        images = tf.cast(images, tf.float32)
-        images.set_shape([height, width, channel])
-        X_batch, Y_batch = tf.train.batch(
-            [images, labels], batch_size=args.batch_size)
+        input_images = tf.constant(data)
+        input_labels = tf.constant(labels)
 
-        x = tf.placeholder(tf.float32, shape=[None, height, width, channel])
-        y = tf.placeholder(tf.int64, shape=[None,])
+        images = tf.decode_raw(input_images, tf.uint8)
+        images = tf.reshape(images, (len(data), height, width, channel))
+        images = tf.cast(images, tf.float32)
+        images.set_shape([len(data), height, width, channel])
+
+        slice_images, slice_labels = tf.train.slice_input_producer(
+            [images, input_labels])
+        X_batch, Y_batch = tf.train.batch(
+            [slice_images, slice_labels], batch_size=args.batch_size)
+
         global_step = tf.Variable(0, trainable=False)
         use_fp16 = False
         checkpoint_path = os.path.join(args.ckpt_dir, 'model.ckpt')
 
-        logits = inference(x, args.batch_size, use_fp16)
-        total_loss = loss(logits, y)
+        logits = inference(X_batch, args.batch_size, use_fp16)
+        total_loss = loss(logits, Y_batch)
         train_op = train(total_loss, global_step, args.batch_size)
 
         saver = tf.train.Saver(tf.all_variables())
@@ -40,8 +46,7 @@ def training(args):
 
         init = tf.global_variables_initializer()
         config = tf.ConfigProto(
-                gpu_options=tf.GPUOptions(allow_growth=True),
-                log_device_placement=True)
+                gpu_options=tf.GPUOptions(allow_growth=True))
 
         with tf.Session(config=config) as sess:
             sess.run(init)
@@ -55,9 +60,10 @@ def training(args):
                 # training
                 for step in range(args.max_step):
                     start_time = time()
-                    X, Y = sess.run([X_batch, Y_batch])
-                    _, loss_value = sess.run([train_op, total_loss], feed_dict={x: X, y: Y})
-                    duration = time.time() - start_time
+                    _, loss_value = sess.run([train_op, total_loss])
+                    duration = time() - start_time
+
+                    assert not np.isnan(loss_value), 'Model diverged with loss = NaN'
 
                     if step % 10 == 0:
                         num_examples_per_step = args.batch_size
@@ -74,10 +80,10 @@ def training(args):
                         summary_writer.add_summary(summary_str, step)
 
                     # Save the model checkpoint periodically.
-                    if step % 1000 == 0 or (step + 1) == FLAGS.max_steps:
+                    if step % 1000 == 0 or (step + 1) == args.max_step:
                         saver.save(sess, checkpoint_path, global_step=step)
             except:
-                print(sys.exc_info()[0])
+                print(traceback.format_exc())
 
             finally:
                 coord.request_stop()

@@ -15,10 +15,12 @@ class Data():
         for root, dirs, files in os.walk(self.data_dir_path):
             for file in tqdm(files):
                 self._add_image(root, file)
-                if len(self.data_sets) == 10000:
+                if len(self.data_sets) == 1000:
                     break
 
 
     def _add_image(self, root, file):
         with Image.open(os.path.join(root, file)) as image_file:
-            self.data_sets.append(image_file.tobytes())
+            if image_file.size == (120, 169):
+                # image_file = image_file.resize((120, 169))
+                self.data_sets.append(image_file.tobytes())

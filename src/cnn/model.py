@@ -109,7 +109,7 @@ def inference(x, batch_size, use_fp16, logger=True):
         conv1 = tf.nn.relu(bias, name=scope.name)
         if logger:
             _activation_summary(conv1)
-            visualize_hidden_layer_output('conv1/output', conv1, tf.shape(conv1), 64)
+            # visualize_hidden_layer_output('conv1/output', conv1, tf.shape(conv1), 64)
 
     pool1 = tf.nn.max_pool(conv1, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1],
                            padding='SAME', name='pool1')
@@ -128,7 +128,7 @@ def inference(x, batch_size, use_fp16, logger=True):
         conv2 = tf.nn.relu(bias, name=scope.name)
         if logger:
             _activation_summary(conv2)
-            visualize_hidden_layer_output('conv1/output', conv2, tf.shape(conv2), 64)
+            # visualize_hidden_layer_output('conv1/output', conv2, tf.shape(conv2), 64)
 
     norm2 = tf.nn.lrn(conv2, 4, bias=1.0, alpha=0.001 / 9.0, beta=0.75, name='norm2')
     pool2 = tf.nn.max_pool(norm2, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1],
