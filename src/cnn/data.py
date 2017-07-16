@@ -4,6 +4,8 @@ import numpy as np
 import os
 
 
+# TODO: ラベル付をちゃんとしたいので、恐らくcsvを読み込むことになるはず
+# TODO: テストデータの用意
 class Data():
     def __init__(self, data_dir_path):
         self.data_dir_path = data_dir_path
@@ -21,6 +23,8 @@ class Data():
 
     def _add_image(self, root, file):
         with Image.open(os.path.join(root, file)) as image_file:
+            # TODO: なんかsizeが違うとかで怒られるので、どうにかする
+            # エラーを確認するとチャネルが入っていないようにみえた
             if image_file.size == (120, 169):
                 # image_file = image_file.resize((120, 169))
                 self.data_sets.append(image_file.tobytes())

@@ -59,6 +59,7 @@ def _activation_summary(x):
     tf.summary.scalar(tensor_name + '/sparsity', tf.nn.zero_fraction(x))
 
 
+# TODO: この関数でエラーが発生するのでどうにかする
 def visualize_hidden_layer_output(summary_name, layer_output,
                                   image_size, n_feature):
     """学習中のconvolutionのoutput画像をtensorboardへ表示."""
