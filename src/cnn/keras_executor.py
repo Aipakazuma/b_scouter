@@ -14,14 +14,19 @@ import argparse
 from data import Data
 
 
-WIDTH = 320
-HEIGHT = 200
+WIDTH = 120
+HEIGHT = 169
 
 
 def define_model():
     # モデル構築
     model = Sequential()
-    model.add(Conv2D(64, (5, 5), strides=(1, 1), padding='SAME', input_shape=(WIDTH, HEIGHT, 3)))
+    model.add(Conv2D(64, (5, 5), strides=(1, 1), padding='SAME', input_shape=(HEIGHT, WIDTH,3)))
+    model.add(MaxPooling2D((2, 2), strides=(1, 1), padding='VALID'))
+    model.add(BatchNormalization())
+    model.add(Activation('relu'))
+    model.add(Dropout(0.25))
+    model.add(Conv2D(128, (5, 5), strides=(1, 1), padding='SAME'))
     model.add(MaxPooling2D((2, 2), strides=(1, 1), padding='VALID'))
     model.add(BatchNormalization())
     model.add(Activation('relu'))
@@ -52,11 +57,11 @@ def train(args):
     label_0 = np.zeros(len(data_0))
 
     data_1_obj = Data(data_dir_path=path_false)
-    data_1 = data_1_obj.data_sets[:len(data_0) + 1]
+    data_1 = data_1_obj.data_sets
     label_1 = np.ones(len(data_1))
 
-    data, labels = data_0 + data_1, label_0 + label_1
-    X_train = np.asarray(data)
+    data, labels = np.concatenate([data_0, data_1], axis=0), np.concatenate([label_0, label_1], axis=0)
+    X_train = data
     Y_train = labels
 
     path_true = os.path.join(args.data_dir, 'favarit', 'test')
@@ -66,11 +71,11 @@ def train(args):
     label_0 = np.zeros(len(data_0))
 
     data_1_obj = Data(data_dir_path=path_false)
-    data_1 = data_1_obj.data_sets[:len(data_0) + 1]
+    data_1 = data_1_obj.data_sets
     label_1 = np.ones(len(data_1))
 
-    data, labels = data_0 + data_1, label_0 + label_1
-    X_test = np.asarray(data)
+    data, labels = np.concatenate([data_0, data_1], axis=0), np.concatenate([label_0, label_1], axis=0)
+    X_test = data
     Y_test = labels
 
     # Convert class vectors to binary class matrices.
@@ -83,7 +88,7 @@ def train(args):
     print(model.summary())
 
     model.fit(X_train, Y_train, epochs=args.n_epoch,
-              verbose=2, batch_size=args.batch_size,
+              verbose=1, batch_size=args.batch_size,
               validation_data=(X_test, Y_test), callbacks=callbacks)
 
     # モデルを保存
@@ -97,11 +102,11 @@ def test(args):
     label_0 = np.zeros(len(data_0))
 
     data_1_obj = Data(data_dir_path=os.path.join(args.data_dir, 'test', 'not_favarit'))
-    data_1 = data_1_obj.data_sets[:len(data_0) + 1]
+    data_1 = data_1_obj.data_sets
     label_1 = np.ones(len(data_1))
 
-    data, labels = data_0 + data_1, label_0 + label_1
-    X_test = np.array(data)
+    data, labels = np.concatenate([data_0, data_1], axis=0), np.concatenate([label_0, label_1], axis=0)
+    X_test = data
     Y_test = labels
     Y_test = to_categorical(Y_test, num_classes)
 
