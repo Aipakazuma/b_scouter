@@ -17,8 +17,6 @@ class Data():
         for root, dirs, files in os.walk(self.data_dir_path):
             for file in tqdm(files):
                 self._add_image(root, file)
-                if len(self.data_sets) == 1000:
-                    break
 
 
     def _add_image(self, root, file):
@@ -26,5 +24,5 @@ class Data():
             # TODO: なんかsizeが違うとかで怒られるので、どうにかする
             # エラーを確認するとチャネルが入っていないようにみえた
             if image_file.size == (120, 169):
-                # image_file = image_file.resize((120, 169))
-                self.data_sets.append(image_file.tobytes())
+                image_file = image_file.resize((120, 169))
+            self.data_sets.append(image_file.tobytes())
