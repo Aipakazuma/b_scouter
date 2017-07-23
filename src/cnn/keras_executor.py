@@ -115,10 +115,12 @@ def argument():
     # train.add_argument('--weight-file', type=int, help='weight file.')
     train.add_argument('--batch_size', type=int, help='batch number.')
     train.add_argument('--n_epoch', type=int, help='epoch number.')
+    train.add_argument('--data_dir', type=int, help='data directory')
     # test argument
     test = subparsers.add_parser('test')
     test.add_argument('--batch_size', type=int, help='batch number.')
     test.add_argument('--weights_file', type=str, help='weight fiel.')
+    test.add_argument('--data_dir', type=int, help='data directory')
     return parser
 
 
