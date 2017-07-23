@@ -21,8 +21,8 @@ HEIGHT = 169
 def define_model():
     # モデル構築
     model = Sequential()
-    model.add(Conv2D(64, (5, 5), strides=(1, 1), padding='SAME', input_shape=(HEIGHT, WIDTH,3)))
-    model.add(MaxPooling2D((2, 2), strides=(1, 1), padding='VALID'))
+    model.add(Conv2D(64, (10, 10), strides=(1, 1), padding='SAME', input_shape=(HEIGHT, WIDTH,3)))
+    model.add(MaxPooling2D((4, 4), strides=(1, 1), padding='VALID'))
     model.add(BatchNormalization())
     model.add(Activation('relu'))
     model.add(Dropout(0.25))
@@ -82,7 +82,8 @@ def train(args):
     Y_train = to_categorical(Y_train, num_classes)
     Y_test = to_categorical(Y_test, num_classes)
 
-    tensorboard = TensorBoard()
+    tensorboard = TensorBoard(histogram_freq=1, batch_size=args.batch_size,
+                              write_graph=True, write_images=True)
     callbacks = [tensorboard]
     model = train_op(define_model())
     print(model.summary())
