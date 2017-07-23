@@ -114,7 +114,7 @@ def test(args):
 
     model = train_op(define_model())
     model.load_weights(args.weights_file)
-    predict = model.predict(x_test, batch_size=args.batch_size)
+    predict = model.predict(X_test, batch_size=args.batch_size)
     print(predict)
 
 
