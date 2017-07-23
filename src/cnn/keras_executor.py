@@ -11,6 +11,7 @@ import numpy as np
 from tqdm import tqdm
 import os
 import argparse
+from data import Data
 
 
 WIDTH = 320
