@@ -4,8 +4,6 @@ import numpy as np
 import os
 
 
-# TODO: ラベル付をちゃんとしたいので、恐らくcsvを読み込むことになるはず
-# TODO: テストデータの用意
 class Data():
     def __init__(self, data_dir_path):
         self.data_dir_path = data_dir_path
