@@ -18,11 +18,20 @@ class Data():
             for file in tqdm(files):
                 self._add_image(root, file)
 
+        self.data_sets = np.asarray(self.data_sets, dtype=np.float32)
+
 
     def _add_image(self, root, file):
         with Image.open(os.path.join(root, file)) as image_file:
-            # TODO: なんかsizeが違うとかで怒られるので、どうにかする
-            # エラーを確認するとチャネルが入っていないようにみえた
-            if image_file.size == (120, 169):
+            # サイズが違う場合がある
+            if image_file.size != (120, 169):
                 image_file = image_file.resize((120, 169))
-            self.data_sets.append(image_file.tobytes())
+
+            # channel数が違う場合もある
+            if image_file.mode != 'RGB':
+                rgb_img = Image.new('RGB', image_file.size)
+                rgb_img.paste(image_file)
+                image_file = rgb_img
+
+            image_file = np.asarray(image_file)
+            self.data_sets.append(image_file)
