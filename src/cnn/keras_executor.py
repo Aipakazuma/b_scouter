@@ -45,11 +45,13 @@ def train_op(model):
 
 def train(args):
     num_classes = 2
-    data_0_obj = Data(data_dir_path=os.path.join(args.data_dir, 'train', 'favarit'))
+    path_true = os.path.join(args.data_dir, 'favarit', 'train')
+    path_false = os.path.join(args.data_dir, 'not_favarit', 'train')
+    data_0_obj = Data(data_dir_path=path_true)
     data_0 = data_0_obj.data_sets
     label_0 = np.zeros(len(data_0))
 
-    data_1_obj = Data(data_dir_path=os.path.join(args.data_dir, 'train', 'not_favarit'))
+    data_1_obj = Data(data_dir_path=path_false)
     data_1 = data_1_obj.data_sets[:len(data_0) + 1]
     label_1 = np.ones(len(data_1))
 
@@ -57,11 +59,13 @@ def train(args):
     X_train = np.asarray(data)
     Y_train = labels
 
-    data_0_obj = Data(data_dir_path=os.path.join(args.data_dir, 'test', 'favarit'))
+    path_true = os.path.join(args.data_dir, 'favarit', 'test')
+    path_false = os.path.join(args.data_dir, 'not_favarit', 'test')
+    data_0_obj = Data(data_dir_path=path_true)
     data_0 = data_0_obj.data_sets
     label_0 = np.zeros(len(data_0))
 
-    data_1_obj = Data(data_dir_path=os.path.join(args.data_dir, 'test', 'not_favarit'))
+    data_1_obj = Data(data_dir_path=path_false)
     data_1 = data_1_obj.data_sets[:len(data_0) + 1]
     label_1 = np.ones(len(data_1))
 
