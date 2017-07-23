@@ -4,7 +4,7 @@ from keras.layers.convolutional import Conv2D
 from keras.layers.pooling import MaxPooling2D
 from keras.layers.normalization import BatchNormalization
 from keras.optimizers import Adam
-from keras.callbacks import TensorBoard
+from keras.callbacks import TensorBoard, EarlyStopping
 from keras.utils import to_categorical
 from PIL import Image
 import numpy as np
@@ -21,8 +21,8 @@ HEIGHT = 169
 def define_model():
     # モデル構築
     model = Sequential()
-    model.add(Conv2D(64, (10, 10), strides=(1, 1), padding='SAME', input_shape=(HEIGHT, WIDTH,3)))
-    model.add(MaxPooling2D((4, 4), strides=(1, 1), padding='VALID'))
+    model.add(Conv2D(64, (10, 10), strides=(2, 2), padding='SAME', input_shape=(HEIGHT, WIDTH,3)))
+    model.add(MaxPooling2D((4, 4), strides=(2, 2), padding='VALID'))
     model.add(BatchNormalization())
     model.add(Activation('relu'))
     model.add(Dropout(0.25))
@@ -84,7 +84,8 @@ def train(args):
 
     tensorboard = TensorBoard(histogram_freq=1, batch_size=args.batch_size,
                               write_graph=True, write_images=True)
-    callbacks = [tensorboard]
+    early_stopping = EarlyStopping(patience=0, verbose=1)
+    callbacks = [tensorboard, early_stopping]
     model = train_op(define_model())
     print(model.summary())
 
