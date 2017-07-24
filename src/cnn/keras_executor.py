@@ -6,6 +6,7 @@ from keras.layers.normalization import BatchNormalization
 from keras.optimizers import Adam
 from keras.callbacks import TensorBoard, EarlyStopping
 from keras.utils import to_categorical
+from sklearn.metrics import confusion_matrix
 from PIL import Image
 import numpy as np
 from tqdm import tqdm
@@ -93,6 +94,10 @@ def train(args):
               verbose=1, batch_size=args.batch_size,
               validation_data=(X_test, Y_test), callbacks=callbacks)
 
+    score = model.evaluate(X_test, Y_test, verbose=1)
+    print('Test loss:', score[0])
+    print('Test accuracy:', score[1])
+
     # モデルを保存
     model.save_weights('%s.hdf5' % ('test'))
 
@@ -114,8 +119,15 @@ def test(args):
 
     model = train_op(define_model())
     model.load_weights(args.weights_file)
-    predict = model.predict(X_test, batch_size=args.batch_size)
-    print(predict)
+    # predict = model.predict(X_test, batch_size=args.batch_size)
+    predict_classes = model.predict_classes(X_test, batch_size=args.batch_size)
+    score = model.evaluate(X_test, Y_test, verbose=1)
+    true_classes = np.argmax(Y_test, axis=1)
+    [true_positive, false_positive], [false_negative, true_negative] = confusion_matrix(true_classes, predict_classes)
+    print('Test loss:', score[0])
+    print('Test accuracy:', score[1])
+    print('true positive: %d, false positive: %d, false negative: %d, true positive: %d' \
+          % (true_positive, false_positive, false_negative, true_negative))
 
 
 def argument():
